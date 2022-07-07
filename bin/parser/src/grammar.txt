@@ -1,0 +1,19 @@
+Program :== Block
+
+Block :== [Stmt]
+
+Stmt :== VAR "=" Expr;
+      |  IF "(" Expr ")" "{" Block "}" ElseIf Else
+      |  REPEAT "(" Expr ")" "{" Block "}"
+      |  OUTPUT Expr;
+
+ElseIf :?= [ELSEIF "(" Expr ")" "{" Block "}"]
+Else   :?= ELSE "{" Block "}"
+
+Expr :== INT
+      |  VAR
+      |  Expr OP Expr
+
+Expr' :?= OP Expr Expr'
+
+OP :== {+ - ==}

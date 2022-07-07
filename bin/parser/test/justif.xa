@@ -1,0 +1,13 @@
+IF (1) {
+    x = 5;
+} ELSEIF (3 == 3) {
+    y = 2;
+} ELSEIF (1 - 1) {
+    z = 5;
+} ELSE {
+    abc = 0;
+}
+
+IF (0) {
+    abcd = 1;
+}
