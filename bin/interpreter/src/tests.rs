@@ -64,8 +64,8 @@ fn test_binary_operations() {
     assert_eq!(pub_eval_binop_test(&Op::Sub, &Expression::Val(3), &Expression::Val(6), &mut test_memory).unwrap(), -3);
 
     // Test some equalities
-    assert_eq!(pub_eval_binop_test(&Op::Eq, &Expression::Val(5), &Expression::Val(3), &mut test_memory).unwrap(), 0);
-    assert_eq!(pub_eval_binop_test(&Op::Eq, &Expression::Val(3), &Expression::Val(3), &mut test_memory).unwrap(), 1);
+    assert_eq!(pub_eval_binop_test(&Op::Equal, &Expression::Val(5), &Expression::Val(3), &mut test_memory).unwrap(), 0);
+    assert_eq!(pub_eval_binop_test(&Op::Equal, &Expression::Val(3), &Expression::Val(3), &mut test_memory).unwrap(), 1);
 }
 
 #[test]
@@ -151,7 +151,7 @@ fn test_if_stmt() {
         statements:vec![
             Statement::IfStatement { 
                 condition: Expression::BinOp(
-                    Op::Eq,
+                    Op::Equal,
                     Box::new(Expression::Var(String::from("x"))),
                     Box::new(Expression::Val(0))
                 ), 
@@ -165,7 +165,7 @@ fn test_if_stmt() {
                 }, 
                 else_if: vec![
                     (Expression::BinOp(
-                        Op::Eq,
+                        Op::Equal,
                         Box::new(Expression::Var(String::from("x"))),
                         Box::new(Expression::Val(1))
                     ), 
@@ -178,7 +178,7 @@ fn test_if_stmt() {
                         ]
                     }),
                     (Expression::BinOp(
-                        Op::Eq,
+                        Op::Equal,
                         Box::new(Expression::Var(String::from("x2"))),
                         Box::new(Expression::Val(2))
                     ), 

@@ -9,6 +9,7 @@ mod tests;
 #[derive(Copy, Clone, Debug)]
 pub enum ParseError {
     UnexpectedToken(TOKEN_TYPE),
+    UnknownOperator(TOKEN_TYPE),
     FileNotFound,
     VariableParseError,
     IntegerParseError
@@ -199,57 +200,213 @@ fn parse_assign(cur_tok: &mut token, context: *const c_void) -> Result<language:
     return Ok(language::Statement::AssignStatement { var: name, exp: result });
 }
 
-fn parse_expression(cur_tok: &mut token, context: *const c_void) -> Result<language::Expression, ParseError> {
-    let lhs: language::Expression;
-
-    if cur_tok.tok_type == TOKEN_TYPE::VAR {
-        let tok_val = lexer::val_to_str(&cur_tok.val);
-        let name;
-        match tok_val {
-            None => return Err(ParseError::VariableParseError),
-            Some(n) => name = n
-        }
-
-        lhs = language::Expression::Var(name);
-
-    } else if cur_tok.tok_type == TOKEN_TYPE::INT_LIT {
-        let tok_val = lexer::val_to_str(&cur_tok.val);
-        let int_str;
-        match tok_val {
-            None => return Err(ParseError::IntegerParseError),
-            Some(s) => int_str = s
-        }
-
-        let tok_val = int_str.parse::<i32>();
-        let int_val;
-        match tok_val {
-            Err(_e) => return Err(ParseError::IntegerParseError),
-            Ok(i) => int_val = i
-        }
-
-        lhs = language::Expression::Val(int_val);
-    } else {
-        return Err(ParseError::UnexpectedToken(cur_tok.tok_type));
-    }
-
-    *cur_tok = get_token_safe(context);
+fn rvalor(cur_tok: &mut token, context: *const c_void, lhs: language::Expression) -> Result<language::Expression, ParseError> {
     
-    if cur_tok.tok_type == TOKEN_TYPE::SC || cur_tok.tok_type == TOKEN_TYPE::RPAR {
-        return Ok(lhs);
-    }
-
-    let op;
     match cur_tok.tok_type {
-        TOKEN_TYPE::PLUS => op = language::Op::Add,
-        TOKEN_TYPE::MINUS => op = language::Op::Sub,
-        TOKEN_TYPE::EQ => op = language::Op::Eq,
-        _ => return Err(ParseError::UnexpectedToken(cur_tok.tok_type))
+        TOKEN_TYPE::OR => {
+            let this_token = cur_tok.clone();
+            consume_token(cur_tok, TOKEN_TYPE::OR, context)?;
+
+            let rhs = rvaland(cur_tok, context)?;
+            let result = language::Expression::BinOp(token_to_op(this_token.tok_type)?, Box::new(lhs), Box::new(rhs));
+            rvalor(cur_tok, context, result)
+        },
+        TOKEN_TYPE::SC |
+        TOKEN_TYPE::RPAR => {
+            Ok(lhs)
+        },
+        _ => {
+            Err(ParseError::UnexpectedToken(cur_tok.tok_type))
+        }
     }
-    *cur_tok = get_token_safe(context); // Consume the operation
+}
 
-    let rhs = parse_expression(cur_tok, context)?;
+fn rvaland(cur_tok: &mut token, context: *const c_void) -> Result<language::Expression, ParseError> {
+    let lhs = rvaleq(cur_tok, context)?;
+    rvaland_p(cur_tok, context, lhs)
+}
 
-    return Ok(language::Expression::BinOp(op, Box::new(lhs), Box::new(rhs)));
+fn rvaland_p(cur_tok: &mut token, context: *const c_void, lhs: language::Expression) -> Result<language::Expression, ParseError> {
+    
+    match cur_tok.tok_type {
+        TOKEN_TYPE::AND => {
+            let this_token = cur_tok.clone();
+            consume_token(cur_tok, TOKEN_TYPE::AND, context)?;
+
+            let rhs = rvaleq(cur_tok, context)?;
+            let result = language::Expression::BinOp(token_to_op(this_token.tok_type)?, Box::new(lhs), Box::new(rhs));
+            rvaland_p(cur_tok, context, result)
+        },
+        TOKEN_TYPE::OR |
+        TOKEN_TYPE::SC |
+        TOKEN_TYPE::RPAR => {
+            Ok(lhs)
+        },
+        _ => {
+            Err(ParseError::UnexpectedToken(cur_tok.tok_type))
+        }
+    }
+}
+
+fn rvaleq(cur_tok: &mut token, context: *const c_void) -> Result<language::Expression, ParseError> {
+    let lhs = rvalcomp(cur_tok, context)?;
+    rvaleq_p(cur_tok, context, lhs)
+}
+
+fn rvaleq_p(cur_tok: &mut token, context: *const c_void, lhs: language::Expression) -> Result<language::Expression, ParseError> {
+    
+    match cur_tok.tok_type {
+        TOKEN_TYPE::EQ |
+        TOKEN_TYPE::NEQ => {
+            let this_token = cur_tok.clone();
+            consume_token(cur_tok, cur_tok.tok_type, context)?;
+
+            let rhs = rvalcomp(cur_tok, context)?;
+            let result = language::Expression::BinOp(token_to_op(this_token.tok_type)?, Box::new(lhs), Box::new(rhs));
+            rvaleq_p(cur_tok, context, result)
+        },
+        TOKEN_TYPE::AND |
+        TOKEN_TYPE::OR |
+        TOKEN_TYPE::SC |
+        TOKEN_TYPE::RPAR => {
+            Ok(lhs)
+        },
+        _ => {
+            Err(ParseError::UnexpectedToken(cur_tok.tok_type))
+        }
+    }
+}
+
+fn rvalcomp(cur_tok: &mut token, context: *const c_void) -> Result<language::Expression, ParseError> {
+    let lhs = rvaladd(cur_tok, context)?;
+    rvalcomp_p(cur_tok, context, lhs)
+}
+
+fn rvalcomp_p(cur_tok: &mut token, context: *const c_void, lhs: language::Expression) -> Result<language::Expression, ParseError> {
+    match cur_tok.tok_type {
+        TOKEN_TYPE::LE | 
+        TOKEN_TYPE::LT | 
+        TOKEN_TYPE::GE | 
+        TOKEN_TYPE::GT => {
+            let this_token = cur_tok.clone();
+            consume_token(cur_tok, cur_tok.tok_type, context)?;
+
+            let rhs = rvaladd(cur_tok, context)?;
+            let result = language::Expression::BinOp(token_to_op(this_token.tok_type)?, Box::new(lhs), Box::new(rhs));
+            rvalcomp_p(cur_tok, context, result)
+        },
+        TOKEN_TYPE::EQ |
+        TOKEN_TYPE::NEQ |
+        TOKEN_TYPE::AND |
+        TOKEN_TYPE::OR |
+        TOKEN_TYPE::SC |
+        TOKEN_TYPE::RPAR => {
+            Ok(lhs)
+        }
+        _ => {
+            Err(ParseError::UnexpectedToken(cur_tok.tok_type))
+        }
+    }
+}
+
+fn rvaladd(cur_tok: &mut token, context: *const c_void) -> Result<language::Expression, ParseError> {
+    let lhs = rvalmult(cur_tok, context)?;
+    rvaladd_p(cur_tok, context, lhs)
+}
+
+fn rvaladd_p(cur_tok: &mut token, context: *const c_void, lhs: language::Expression) -> Result<language::Expression, ParseError> {
+    match cur_tok.tok_type {
+        TOKEN_TYPE::PLUS | 
+        TOKEN_TYPE::MINUS => {
+            let this_token = cur_tok.clone();
+            consume_token(cur_tok, cur_tok.tok_type, context)?;
+
+            let rhs = rvalmult(cur_tok, context)?;
+            let result = language::Expression::BinOp(token_to_op(this_token.tok_type)?, Box::new(lhs), Box::new(rhs));
+            rvaladd_p(cur_tok, context, result)
+        },
+        TOKEN_TYPE::LE | 
+        TOKEN_TYPE::LT | 
+        TOKEN_TYPE::GE | 
+        TOKEN_TYPE::GT |
+        TOKEN_TYPE::EQ |
+        TOKEN_TYPE::NEQ |
+        TOKEN_TYPE::AND |
+        TOKEN_TYPE::OR |
+        TOKEN_TYPE::SC |
+        TOKEN_TYPE::RPAR => {
+            Ok(lhs)
+        }
+        _ => {
+            Err(ParseError::UnexpectedToken(cur_tok.tok_type))
+        }
+    }
+}
+
+fn rvalmult(cur_tok: &mut token, context: *const c_void) -> Result<language::Expression, ParseError> {
+    let lhs = rvallit(cur_tok, context)?;
+    rvalmult_p(cur_tok, context, lhs)
+}
+
+fn rvalmult_p(cur_tok: &mut token, context: *const c_void, lhs: language::Expression) -> Result<language::Expression, ParseError> {
+    match cur_tok.tok_type {
+        TOKEN_TYPE::ASTERIX | 
+        TOKEN_TYPE::DIV |
+        TOKEN_TYPE::MOD => {
+            let this_token = cur_tok.clone();
+            consume_token(cur_tok, cur_tok.tok_type, context)?;
+
+            let rhs = rvallit(cur_tok, context)?;
+            let result = language::Expression::BinOp(token_to_op(this_token.tok_type)?, Box::new(lhs), Box::new(rhs));
+            rvalmult_p(cur_tok, context, result)
+        },
+        TOKEN_TYPE::PLUS | 
+        TOKEN_TYPE::MINUS |
+        TOKEN_TYPE::LE | 
+        TOKEN_TYPE::LT | 
+        TOKEN_TYPE::GE | 
+        TOKEN_TYPE::GT |
+        TOKEN_TYPE::EQ |
+        TOKEN_TYPE::NEQ |
+        TOKEN_TYPE::AND |
+        TOKEN_TYPE::OR |
+        TOKEN_TYPE::SC |
+        TOKEN_TYPE::RPAR => {
+            Ok(lhs)
+        }
+        _ => {
+            Err(ParseError::UnexpectedToken(cur_tok.tok_type))
+        }
+    }
+}
+
+fn rvallit(cur_tok: &mut token, context: *const c_void) -> Result<language::Expression, ParseError> {
+    match cur_tok.tok_type {
+        TOKEN_TYPE::VAR => {
+            match lexer::val_to_str(&cur_tok.val) {
+                Some(name) => {
+                    consume_token(cur_tok, TOKEN_TYPE::VAR, context)?;
+                    Ok(language::Expression::Var(name))
+                },
+                None => Err(ParseError::VariableParseError)
+            }
+        },
+        TOKEN_TYPE::INT_LIT => {
+            match lexer::val_to_str(&cur_tok.val).map(|s| s.parse::<i32>()) {
+                Some(Ok(i)) => {
+                    consume_token(cur_tok, TOKEN_TYPE::INT_LIT, context)?;
+                    Ok(language::Expression::Val(i))
+                },
+                _ => Err(ParseError::IntegerParseError)
+            }
+        }
+        _ => Err(ParseError::UnexpectedToken(cur_tok.tok_type))
+    }
+}
+
+fn parse_expression(cur_tok: &mut token, context: *const c_void) -> Result<language::Expression, ParseError> {
+    let lhs = rvaland(cur_tok, context)?;
+    return rvalor(cur_tok, context, lhs);
 }
 
 fn consume_token(cur_tok: &mut token, expected: TOKEN_TYPE, context: *const c_void) -> Result<(), ParseError> {
@@ -258,4 +415,29 @@ fn consume_token(cur_tok: &mut token, expected: TOKEN_TYPE, context: *const c_vo
     }
     *cur_tok = get_token_safe(context);
     return Ok(());
+}
+
+/// Consumes the token without checking what it is for a parse error
+/// Only to be used if the token could be on of a set of options
+fn consume_token_unchecked(cur_tok: &mut token, context: *const c_void) {
+    *cur_tok = get_token_safe(context);
+}
+
+fn token_to_op(tok: TOKEN_TYPE) -> Result<Op, ParseError> {
+    match tok {
+        TOKEN_TYPE::PLUS => Ok(Op::Add),
+        TOKEN_TYPE::MINUS => Ok(Op::Sub),
+        TOKEN_TYPE::ASTERIX => Ok(Op::Multiply),
+        TOKEN_TYPE::DIV => Ok(Op::Divide),
+        TOKEN_TYPE::MOD => Ok(Op::Remainder),
+        TOKEN_TYPE::AND => Ok(Op::And),
+        TOKEN_TYPE::OR => Ok(Op::Or),
+        TOKEN_TYPE::EQ => Ok(Op::Equal),
+        TOKEN_TYPE::NEQ => Ok(Op::NotEqual),
+        TOKEN_TYPE::LE => Ok(Op::LessThanOrEqual),
+        TOKEN_TYPE::LT => Ok(Op::LessThan),
+        TOKEN_TYPE::GE => Ok(Op::GreaterThanOrEqual),
+        TOKEN_TYPE::GT => Ok(Op::GreaterThan),
+        _ => Err(ParseError::UnknownOperator(tok))
+    }
 }

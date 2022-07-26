@@ -35,24 +35,24 @@ enum TOKEN_TYPE {
 //   BOOL_LIT = -16,  // "true" or "false" key words
 
 //   // logical operators
-//   AND = -17, // "&&"
-//   OR = -18,  // "||"
+   AND, // "&&"
+   OR,  // "||"
 
 //   // operators
   PLUS,    // addition or unary plus
   MINUS,   // substraction or unary negative
-//   ASTERIX = (int)'*', // multiplication
-//   DIV = (int)'/',     // division
-//   MOD = (int)'%',     // modular
+  ASTERIX, // multiplication
+  DIV,     // division
+  MOD,     // modular
 //   NOT = (int)'!',     // unary negation
 
 //   // comparison operators
   EQ,      // equal
-//   NE = -20,      // not equal
-//   LE = -21,      // less than or equal to
-//   LT = (int)'<', // less than
-//   GE = -23,      // greater than or equal to
-//   GT = (int)'>', // greater than
+  NE,      // not equal
+  LE,      // less than or equal to
+  LT, // less than
+  GE,      // greater than or equal to
+  GT, // greater than
 
   // special tokens
   EOF_TOK, // signal end of file

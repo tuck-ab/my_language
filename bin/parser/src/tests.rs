@@ -100,7 +100,7 @@ fn just_if() {
                 else_if: vec![
                     (
                         Expression::BinOp(
-                            language::Op::Eq,
+                            language::Op::Equal,
                             Box::new(Expression::Val(3)),
                             Box::new(Expression::Val(3))
                         ) , 
