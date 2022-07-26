@@ -174,6 +174,7 @@ fn eval_bin_op(op: &Op, lhs: &Expression, rhs: &Expression, memory: &mut Memory)
     match op {
         Op::Add => return Ok(lhs_eval + rhs_eval),
         Op::Sub => return Ok(lhs_eval - rhs_eval),
-        Op::Eq => return Ok((lhs_eval == rhs_eval) as i32)
+        Op::Equal => return Ok((lhs_eval == rhs_eval) as i32),
+        _ => return Err(ErrorType::NotImplimented)
     }
 }

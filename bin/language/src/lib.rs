@@ -46,5 +46,15 @@ pub enum Expression {
 pub enum Op {
     Add,
     Sub,
-    Eq
+    Multiply,
+    Divide,
+    Remainder,
+    And,
+    Or,
+    Equal,
+    NotEqual,
+    LessThanOrEqual,
+    LessThan,
+    GreaterThanOrEqual,
+    GreaterThan
 }

@@ -16,4 +16,32 @@ Expr :== INT
 
 Expr' :?= OP Expr Expr'
 
+rval ::= rvaland rvalor
+rvalor ::= "||" rvaland rvalor
+        | epsilon
+rvaland ::= rvaleq rvaland’
+rvaland’ ::= "&&" rvaleq rvaland’
+          | epsilon
+rvaleq ::= rvalcomp rvaleq’
+rvaleq’ ::= "==" rvalcomp rvaleq’ | "!=" rvalcomp rvaleq’
+         | epsilon
+rvalcomp ::= rvaladd rvalcomp’
+rvalcomp’ ::= "<=" rvaladd rvalcomp’ | "<" rvaladd rvalcomp’
+           | ">=" rvaladd rvalcomp’ | ">" rvaladd rvalcomp’
+           | epsilon
+rvaladd ::= rvalmult rvaladd’
+rvaladd’ ::= "+" rvalmult rvaladd’ | "-" rvalmult rvaladd’
+          | epsilon
+rvalmult ::= rvalneg rvalmult’
+rvalmult’ ::= "*" rvalneg rvalmult’ | "/" rvalneg rvalmult’
+            | "%" rvalneg rvalmult’
+            | epsilon
+rvalneg ::= "-" rvalneg | "!" rvalneg
+         | rvalbr
+rvalbr ::= "(" expr ")"
+        | rvalvar
+rvalvar ::= IDENT | IDENT "(" args ")"
+         | rvallit
+rvallit ::= INT_LIT | FLOAT_LIT | BOOL_LIT
+
 OP :== {+ - ==}
