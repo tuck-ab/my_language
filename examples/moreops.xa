@@ -1,0 +1,12 @@
+a = 3;
+b = 9;
+
+OUTPUT b + a;
+OUTPUT b / a;
+OUTPUT b * a;
+OUTPUT b % a;
+OUTPUT b - a;
+OUTPUT b == a;
+OUTPUT b != a;
+OUTPUT b < a;
+OUTPUT b > a;

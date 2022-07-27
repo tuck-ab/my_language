@@ -95,6 +95,71 @@ struct token get_token(void *v_con) {
         }
     }
 
+    if (con->last_char == '!') {
+        con->next_char = getc(con->file_pointer);
+        if (con->next_char == '=') {
+            con->last_char = getc(con->file_pointer); // Consume the second = in !=
+            tok.tok_type = NE;
+            return tok;
+        } else {
+            con->last_char = con->next_char;
+            tok.tok_type = INVALID; // Soon to be NOT
+            return tok;
+        }
+    }
+
+    if (con->last_char == '&') {
+        con->next_char = getc(con->file_pointer);
+        if (con->next_char == '&') {
+            con->last_char = getc(con->file_pointer); // Consume the second & in &&
+            tok.tok_type = AND;
+            return tok;
+        } else {
+            con->last_char = con->next_char;
+            tok.tok_type = INVALID;
+            return tok;
+        }
+    }
+
+    if (con->last_char == '|') {
+        con->next_char = getc(con->file_pointer);
+        if (con->next_char == '|') {
+            con->last_char = getc(con->file_pointer); // Consume the second | in ||
+            tok.tok_type = OR;
+            return tok;
+        } else {
+            con->last_char = con->next_char;
+            tok.tok_type = INVALID;
+            return tok;
+        }
+    }
+
+    if (con->last_char == '<') {
+        con->next_char = getc(con->file_pointer);
+        if (con->next_char == '=') {
+            con->last_char = getc(con->file_pointer);
+            tok.tok_type = LE;
+            return tok;
+        } else {
+            con->last_char = con->next_char;
+            tok.tok_type = LT;
+            return tok;
+        }
+    }
+
+    if (con->last_char == '>') {
+        con->next_char = getc(con->file_pointer);
+        if (con->next_char == '=') {
+            con->last_char = getc(con->file_pointer);
+            tok.tok_type = GE;
+            return tok;
+        } else {
+            con->last_char = con->next_char;
+            tok.tok_type = GT;
+            return tok;
+        }
+    }
+
     if (con->last_char == '+') {
         con->last_char = getc(con->file_pointer); // Consume the +
         tok.tok_type = PLUS;
@@ -104,6 +169,24 @@ struct token get_token(void *v_con) {
     if (con->last_char == '-') {
         con->last_char = getc(con->file_pointer); // Consume the -
         tok.tok_type = MINUS;
+        return tok;
+    }
+
+    if (con->last_char == '*') {
+        con->last_char = getc(con->file_pointer); // Consume the *
+        tok.tok_type = ASTERIX;
+        return tok;
+    }
+
+    if (con->last_char == '/') {
+        con->last_char = getc(con->file_pointer); // Consume the /
+        tok.tok_type = DIV;
+        return tok;
+    }
+
+    if (con->last_char == '%') {
+        con->last_char = getc(con->file_pointer); // Consume the /
+        tok.tok_type = MOD;
         return tok;
     }
 
