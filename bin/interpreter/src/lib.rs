@@ -171,10 +171,21 @@ fn eval_bin_op(op: &Op, lhs: &Expression, rhs: &Expression, memory: &mut Memory)
     // which means they can simply be unwrapped
 
     //TODO overflow add etc.
+    #[allow(unreachable_patterns)]
     match op {
-        Op::Add => return Ok(lhs_eval + rhs_eval),
-        Op::Sub => return Ok(lhs_eval - rhs_eval),
-        Op::Equal => return Ok((lhs_eval == rhs_eval) as i32),
-        _ => return Err(ErrorType::NotImplimented)
+        Op::Add => Ok(lhs_eval + rhs_eval),
+        Op::Sub => Ok(lhs_eval - rhs_eval),
+        Op::Multiply => Ok(lhs_eval * rhs_eval),
+        Op::Divide => Ok(lhs_eval / rhs_eval),
+        Op::Remainder => Ok(lhs_eval % rhs_eval),
+        Op::And => Ok((!(lhs_eval == 0) && !(rhs_eval == 0)) as i32),
+        Op::Or => Ok((!(lhs_eval == 0) || !(rhs_eval == 0)) as i32),
+        Op::Equal => Ok((lhs_eval == rhs_eval) as i32),
+        Op::NotEqual => Ok((lhs_eval != rhs_eval) as i32),
+        Op::LessThan => Ok((lhs_eval < rhs_eval) as i32),
+        Op::LessThanOrEqual => Ok((lhs_eval <= rhs_eval) as i32),
+        Op::GreaterThan => Ok((lhs_eval > rhs_eval) as i32),
+        Op::GreaterThanOrEqual => Ok((lhs_eval >= rhs_eval) as i32),
+        _ => Err(ErrorType::NotImplimented)
     }
 }
